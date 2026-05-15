@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background gradient: subtle radial from dark green-black -->
+    <radialGradient id="bgGrad" cx="50%" cy="35%" r="80%">
+      <stop offset="0%" stop-color="#11201a"/>
+      <stop offset="55%" stop-color="#0a120e"/>
+      <stop offset="100%" stop-color="#05080a"/>
+    </radialGradient>
+
+    <!-- Chip body gradient: subtle top-to-bottom -->
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a2620"/>
+      <stop offset="100%" stop-color="#0d1612"/>
+    </linearGradient>
+
+    <!-- Pin gradient: metallic green-silver -->
+    <linearGradient id="pinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8aa39a"/>
+      <stop offset="50%" stop-color="#c4d8cc"/>
+      <stop offset="100%" stop-color="#5a6f63"/>
+    </linearGradient>
+
+    <!-- Scanline pattern -->
+    <pattern id="scanlines" patternUnits="userSpaceOnUse" width="4" height="4">
+      <rect width="4" height="4" fill="transparent"/>
+      <rect width="4" height="1" fill="#6efba8" opacity="0.04"/>
+    </pattern>
+
+    <!-- Glow filter for the indicator LED -->
+    <filter id="ledGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Text glow filter -->
+    <filter id="textGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="1.2" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Inner shadow for chip -->
+    <filter id="chipInset" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2" in="SourceAlpha"/>
+      <feOffset dx="0" dy="1" result="offsetBlur"/>
+      <feFlood flood-color="#000" flood-opacity="0.6"/>
+      <feComposite in2="offsetBlur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ═══ BACKGROUND ═══ -->
+  <rect width="512" height="512" rx="96" fill="url(#bgGrad)"/>
+  <rect width="512" height="512" rx="96" fill="url(#scanlines)"/>
+
+  <!-- Subtle inner border glow -->
+  <rect x="4" y="4" width="504" height="504" rx="92"
+        fill="none" stroke="#6efba8" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- Decorative corner brackets — terminal feel -->
+  <g stroke="#6efba8" stroke-opacity="0.25" stroke-width="2" fill="none" stroke-linecap="square">
+    <path d="M 36 56 L 36 36 L 56 36"/>
+    <path d="M 456 36 L 476 36 L 476 56"/>
+    <path d="M 476 456 L 476 476 L 456 476"/>
+    <path d="M 56 476 L 36 476 L 36 456"/>
+  </g>
+
+  <!-- PCB-style trace lines (very subtle, decorative) -->
+  <g stroke="#4fb37c" stroke-opacity="0.18" stroke-width="1.4" fill="none" stroke-linecap="square">
+    <!-- Top-left corner traces leading to pins -->
+    <path d="M 60 100 L 100 100 L 100 140"/>
+    <path d="M 60 130 L 80 130 L 80 168"/>
+    <!-- Top-right -->
+    <path d="M 452 100 L 412 100 L 412 140"/>
+    <path d="M 452 130 L 432 130 L 432 168"/>
+    <!-- Bottom-left -->
+    <path d="M 60 412 L 100 412 L 100 372"/>
+    <path d="M 60 382 L 80 382 L 80 344"/>
+    <!-- Bottom-right -->
+    <path d="M 452 412 L 412 412 L 412 372"/>
+    <path d="M 452 382 L 432 382 L 432 344"/>
+  </g>
+
+  <!-- ═══ CHIP PINS ═══ -->
+  <!-- 7 pins per side. Chip body: 256x256 centered at (256,256), so chip is 128–384 -->
+  <!-- Pin: 14 wide × 18 long, centered at: 152, 184, 216, 248, 280, 312, 344 (no, let me redo for 256 wide / 7 pins) -->
+  <!-- For 7 pins across 256: spacing ≈ 32; positions: 144, 176, 208, 240, 272, 304, 336 -->
+
+  <!-- TOP PINS (extend upward from chip top edge y=128) -->
+  <g fill="url(#pinGrad)" stroke="#1a2620" stroke-width="0.5">
+    <rect x="137" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="169" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="201" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="233" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="265" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="297" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="329" y="106" width="14" height="22" rx="1.5"/>
+    <rect x="361" y="106" width="14" height="22" rx="1.5"/>
+  </g>
+
+  <!-- BOTTOM PINS -->
+  <g fill="url(#pinGrad)" stroke="#1a2620" stroke-width="0.5">
+    <rect x="137" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="169" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="201" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="233" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="265" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="297" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="329" y="384" width="14" height="22" rx="1.5"/>
+    <rect x="361" y="384" width="14" height="22" rx="1.5"/>
+  </g>
+
+  <!-- LEFT PINS -->
+  <g fill="url(#pinGrad)" stroke="#1a2620" stroke-width="0.5">
+    <rect x="106" y="137" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="169" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="201" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="233" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="265" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="297" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="329" width="22" height="14" rx="1.5"/>
+    <rect x="106" y="361" width="22" height="14" rx="1.5"/>
+  </g>
+
+  <!-- RIGHT PINS -->
+  <g fill="url(#pinGrad)" stroke="#1a2620" stroke-width="0.5">
+    <rect x="384" y="137" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="169" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="201" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="233" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="265" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="297" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="329" width="22" height="14" rx="1.5"/>
+    <rect x="384" y="361" width="22" height="14" rx="1.5"/>
+  </g>
+
+  <!-- ═══ CHIP BODY ═══ -->
+  <rect x="128" y="128" width="256" height="256" rx="14"
+        fill="url(#chipGrad)"
+        stroke="#6efba8" stroke-opacity="0.55" stroke-width="2"/>
+
+  <!-- Inner chip frame -->
+  <rect x="140" y="140" width="232" height="232" rx="8"
+        fill="none" stroke="#6efba8" stroke-opacity="0.15" stroke-width="1"/>
+
+  <!-- ═══ PIN 1 INDICATOR (top-left corner dot with amber glow) ═══ -->
+  <circle cx="158" cy="158" r="5" fill="#ffb454" filter="url(#ledGlow)"/>
+  <circle cx="158" cy="158" r="2" fill="#fff5d6"/>
+
+  <!-- ═══ WORDMARK ═══ -->
+  <!-- "MCX" big and bold in phosphor green -->
+  <text x="256" y="262" text-anchor="middle"
+        font-family="'JetBrains Mono', 'Courier New', monospace"
+        font-size="78" font-weight="800"
+        fill="#6efba8" letter-spacing="4"
+        filter="url(#textGlow)">MCX</text>
+
+  <!-- "A153" subtitle -->
+  <text x="256" y="305" text-anchor="middle"
+        font-family="'JetBrains Mono', 'Courier New', monospace"
+        font-size="22" font-weight="600"
+        fill="#4fb37c" letter-spacing="8">A153</text>
+
+  <!-- "TRAINER" tag at bottom -->
+  <text x="256" y="346" text-anchor="middle"
+        font-family="'JetBrains Mono', 'Courier New', monospace"
+        font-size="13" font-weight="500"
+        fill="#8aa39a" letter-spacing="10" opacity="0.7">// TRAINER</text>
+
+  <!-- Cortex-M33 badge (small text above MCX, with side dashes positioned outside text) -->
+  <g opacity="0.7">
+    <text x="256" y="192" text-anchor="middle"
+          font-family="'JetBrains Mono', 'Courier New', monospace"
+          font-size="11" font-weight="600"
+          fill="#6ad6ff" letter-spacing="3">CORTEX-M33</text>
+  </g>
+  <!-- Bracket dots framing the Cortex-M33 label -->
+  <circle cx="178" cy="188" r="2" fill="#6ad6ff" opacity="0.5"/>
+  <circle cx="334" cy="188" r="2" fill="#6ad6ff" opacity="0.5"/>
+</svg>
