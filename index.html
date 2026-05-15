@@ -1177,6 +1177,358 @@
     }
   }
 
+  /* ─── FAB STACK ─────────────────────────────── */
+  .fab-stack {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .fab-stack .pdf-fab {
+    position: static;
+    right: auto;
+    bottom: auto;
+  }
+  .fab {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-weight: 700;
+    position: relative;
+    color: #0a100b;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+  }
+  .fab:hover { transform: translateY(-2px); }
+  .fab:active { transform: translateY(0); }
+  .fab-code { background: var(--blue); box-shadow: 0 4px 18px rgba(106, 214, 255, 0.35); }
+  .fab-code:hover { box-shadow: 0 6px 22px rgba(106, 214, 255, 0.5); }
+  .fab-calc { background: var(--amber); box-shadow: 0 4px 18px rgba(255, 180, 84, 0.35); }
+  .fab-calc:hover { box-shadow: 0 6px 22px rgba(255, 180, 84, 0.5); }
+  .fab .label {
+    position: absolute;
+    right: 64px;
+    background: var(--panel);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    border: 1px solid var(--border-bright);
+  }
+  .fab:hover .label { opacity: 1; }
+  @media (max-width: 700px) {
+    .fab-stack {
+      right: 14px;
+      bottom: 14px;
+      gap: 10px;
+    }
+    .fab {
+      width: 48px;
+      height: 48px;
+      font-size: 20px;
+    }
+    .fab .label { display: none; }
+  }
+
+  /* ─── CODE VIEWER PANEL ─────────────────────────────── */
+  .code-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 50vw;
+    max-width: 720px;
+    min-width: 380px;
+    height: 100vh;
+    background: var(--panel);
+    border-left: 1px solid var(--border-bright);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.4);
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .code-panel.show { transform: translateX(0); }
+  .code-panel-header {
+    flex-shrink: 0;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-bright);
+    background: var(--bg);
+  }
+  .code-toolbar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .code-toolbar select {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 2px;
+  }
+  .code-toolbar input[type="number"] {
+    width: 80px;
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .code-toolbar button {
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--text-dim);
+    padding: 6px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 2px;
+  }
+  .code-toolbar button:hover { color: var(--blue); border-color: var(--blue); }
+
+  .code-body {
+    flex: 1;
+    overflow: auto;
+    background: #050908;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .code-line {
+    display: flex;
+    align-items: flex-start;
+    padding: 0 6px;
+    transition: background 0.2s;
+  }
+  .code-line:hover { background: rgba(110, 251, 168, 0.04); }
+  .code-line.highlight {
+    background: rgba(255, 220, 0, 0.18);
+    border-left: 3px solid var(--amber);
+    padding-left: 3px;
+  }
+  .code-line.highlight:hover { background: rgba(255, 220, 0, 0.28); }
+  .code-ln {
+    flex-shrink: 0;
+    width: 48px;
+    color: var(--text-faint);
+    text-align: right;
+    padding-right: 12px;
+    user-select: none;
+    border-right: 1px solid var(--border);
+    margin-right: 12px;
+  }
+  .code-line.highlight .code-ln { color: var(--amber); font-weight: 700; }
+  .code-txt {
+    flex: 1;
+    white-space: pre;
+    color: var(--text);
+    overflow-x: visible;
+  }
+  /* C syntax highlighting */
+  .code-txt .kw { color: #ff7eb6; font-weight: 600; }   /* keywords: if, while, void, etc */
+  .code-txt .type { color: #82cfff; }                    /* types: uint32_t, int, etc */
+  .code-txt .num { color: #ffb454; }                     /* numbers */
+  .code-txt .str { color: #c084fc; }                     /* strings */
+  .code-txt .cmt { color: var(--text-faint); font-style: italic; }
+  .code-txt .pp  { color: #6efba8; }                     /* preprocessor */
+  .code-txt .fn  { color: #6ad6ff; }                     /* function calls */
+  .code-txt .reg { color: #ffb454; font-weight: 600; }   /* registers */
+
+  @media (max-width: 700px) {
+    .code-panel {
+      width: 100vw;
+      min-width: 0;
+      max-width: none;
+    }
+    .code-body { font-size: 11.5px; }
+    .code-ln { width: 38px; padding-right: 8px; margin-right: 8px; }
+  }
+
+  /* ─── CALCULATOR PANEL ─────────────────────────────── */
+  .calc-panel {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 360px;
+    max-height: 86vh;
+    background: var(--panel);
+    border-left: 1px solid var(--border-bright);
+    border-top: 1px solid var(--border-bright);
+    border-top-left-radius: 12px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(110%);
+    transition: transform 0.3s ease;
+    box-shadow: -8px 0 30px rgba(0,0,0,0.4);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .calc-panel.show { transform: translateX(0); }
+  .calc-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border-bright);
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top-left-radius: 12px;
+  }
+  .calc-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--amber);
+  }
+  .calc-display {
+    padding: 12px 14px;
+    background: #050908;
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+  .calc-display-main {
+    font-size: 28px;
+    color: var(--amber);
+    text-align: right;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    white-space: nowrap;
+    font-weight: 600;
+    min-height: 36px;
+  }
+  .calc-display-row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-dim);
+    font-size: 11.5px;
+    line-height: 1.5;
+    gap: 10px;
+  }
+  .calc-display-row .lbl { color: var(--text-faint); flex-shrink: 0; }
+  .calc-display-row .val { text-align: right; word-break: break-all; }
+  .calc-display-row .val.bin {
+    font-size: 10.5px;
+    color: var(--blue);
+    word-break: break-all;
+  }
+  .calc-pending {
+    font-size: 11px;
+    color: var(--text-faint);
+    text-align: right;
+    height: 14px;
+    margin-bottom: 4px;
+  }
+
+  .calc-mode-row {
+    display: flex;
+    gap: 4px;
+    padding: 8px 12px 0;
+  }
+  .calc-mode-btn {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--text-dim);
+    padding: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border-radius: 2px;
+    text-transform: uppercase;
+  }
+  .calc-mode-btn.active { background: var(--amber); color: #0a100b; border-color: var(--amber); }
+
+  .calc-keys {
+    padding: 8px 12px 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+  }
+  .calc-key {
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    color: var(--text);
+    padding: 12px 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.1s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+  }
+  .calc-key:hover { background: #131b16; }
+  .calc-key:active { background: #1a2620; transform: scale(0.96); }
+  .calc-key:disabled { opacity: 0.3; cursor: not-allowed; }
+  .calc-key.op { color: var(--amber); border-color: rgba(255, 180, 84, 0.4); }
+  .calc-key.op:hover { background: rgba(255, 180, 84, 0.1); }
+  .calc-key.eq { background: var(--amber); color: #0a100b; border-color: var(--amber); grid-column: span 1; }
+  .calc-key.eq:hover { background: #ffc474; }
+  .calc-key.fn { color: var(--blue); border-color: rgba(106, 214, 255, 0.4); font-size: 11.5px; }
+  .calc-key.fn:hover { background: rgba(106, 214, 255, 0.08); }
+  .calc-key.danger { color: var(--red); border-color: rgba(255, 94, 108, 0.4); }
+  .calc-key.danger:hover { background: rgba(255, 94, 108, 0.1); }
+  .calc-key.wide { grid-column: span 2; }
+
+  @media (max-width: 700px) {
+    .calc-panel { width: 100vw; max-height: 92vh; border-top-left-radius: 0; }
+    .calc-header { border-top-left-radius: 0; }
+    .calc-display-main { font-size: 24px; }
+    .calc-key { font-size: 13px; padding: 10px 2px; min-height: 42px; }
+  }
+
+  /* ─── CODE LINK BUTTON ON QUESTIONS ─────────────────────────────── */
+  .code-link-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(106, 214, 255, 0.08);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border-radius: 2px;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+  .code-link-btn:hover {
+    background: rgba(106, 214, 255, 0.18);
+    color: #d6f1ff;
+  }
+
   /* ─── RESULTS SCREEN ─────────────────────────────── */
   .results {
     text-align: center;
@@ -1745,11 +2097,125 @@
   </div>
 </div>
 
-<!-- ════ PDF DATASHEET SIDE PANEL ════ -->
-<button class="pdf-fab" id="pdf-fab" onclick="togglePdfPanel()" title="Datasheet">
-  📄
-  <span class="label">Datasheet</span>
-</button>
+<!-- ════ FLOATING ACTION BUTTONS STACK ════ -->
+<div class="fab-stack">
+  <button class="fab pdf-fab" id="pdf-fab" onclick="togglePdfPanel()" title="Datasheet" style="position: static; background: var(--green); box-shadow: 0 4px 18px rgba(110, 251, 168, 0.35);">
+    📄
+    <span class="label">Datasheet</span>
+  </button>
+  <button class="fab fab-code" onclick="toggleCodePanel()" title="Source code">
+    📜
+    <span class="label">Code</span>
+  </button>
+  <button class="fab fab-calc" onclick="toggleCalcPanel()" title="Calculator">
+    🔢
+    <span class="label">Calculator</span>
+  </button>
+</div>
+
+<!-- ════ CODE VIEWER PANEL ════ -->
+<div class="code-panel" id="code-panel">
+  <div class="code-panel-header">
+    <div class="pdf-panel-title-row">
+      <div class="pdf-panel-title" style="color: var(--blue);">// SOURCE CODE</div>
+      <button class="pdf-panel-close" onclick="toggleCodePanel()" title="Sluiten">✕</button>
+    </div>
+    <div class="code-toolbar">
+      <select id="code-file-select" onchange="loadCodeFile(this.value)">
+        <!-- options injected by JS -->
+      </select>
+      <input type="number" id="code-jump-line" placeholder="regel" min="1" />
+      <button onclick="jumpToCodeLine()">⏎ Spring</button>
+    </div>
+  </div>
+  <div class="code-body" id="code-body">
+    <div style="padding: 40px; text-align: center; color: var(--text-dim);">Code wordt geladen...</div>
+  </div>
+</div>
+
+<!-- ════ CALCULATOR PANEL ════ -->
+<div class="calc-panel" id="calc-panel">
+  <div class="calc-header">
+    <div class="calc-title">// CALCULATOR</div>
+    <button class="pdf-panel-close" onclick="toggleCalcPanel()" title="Sluiten">✕</button>
+  </div>
+  <div class="calc-display">
+    <div class="calc-pending" id="calc-pending"></div>
+    <div class="calc-display-main" id="calc-main">0</div>
+    <div class="calc-display-row">
+      <span class="lbl">DEC</span>
+      <span class="val" id="calc-dec">0</span>
+    </div>
+    <div class="calc-display-row">
+      <span class="lbl">HEX</span>
+      <span class="val" id="calc-hex">0x0</span>
+    </div>
+    <div class="calc-display-row">
+      <span class="lbl">BIN</span>
+      <span class="val bin" id="calc-bin">0</span>
+    </div>
+  </div>
+  <div class="calc-mode-row">
+    <button class="calc-mode-btn active" data-mode="dec" onclick="setCalcMode('dec')">DEC</button>
+    <button class="calc-mode-btn" data-mode="hex" onclick="setCalcMode('hex')">HEX</button>
+    <button class="calc-mode-btn" data-mode="bin" onclick="setCalcMode('bin')">BIN</button>
+  </div>
+  <div class="calc-keys">
+    <!-- Row 1: bit ops -->
+    <button class="calc-key fn" onclick="calcOp('&amp;')">AND</button>
+    <button class="calc-key fn" onclick="calcOp('|')">OR</button>
+    <button class="calc-key fn" onclick="calcOp('^')">XOR</button>
+    <button class="calc-key fn" onclick="calcUnary('~')">NOT</button>
+    <button class="calc-key danger" onclick="calcClear()">C</button>
+
+    <!-- Row 2: shifts & power -->
+    <button class="calc-key fn" onclick="calcOp('<<')">&lt;&lt;</button>
+    <button class="calc-key fn" onclick="calcOp('>>')">&gt;&gt;</button>
+    <button class="calc-key fn" onclick="calcOp('**')">x^y</button>
+    <button class="calc-key fn" onclick="calcPow2()">2^n</button>
+    <button class="calc-key" onclick="calcBackspace()">⌫</button>
+
+    <!-- Row 3: A B C / -->
+    <button class="calc-key" data-hex onclick="calcDigit('A')">A</button>
+    <button class="calc-key" data-hex onclick="calcDigit('B')">B</button>
+    <button class="calc-key" data-hex onclick="calcDigit('C')">C</button>
+    <button class="calc-key op" onclick="calcOp('/')">÷</button>
+    <button class="calc-key op" onclick="calcParen()">( )</button>
+
+    <!-- Row 4: D E F * 7 8 9 -->
+    <button class="calc-key" data-hex onclick="calcDigit('D')">D</button>
+    <button class="calc-key" data-hex onclick="calcDigit('E')">E</button>
+    <button class="calc-key" data-hex onclick="calcDigit('F')">F</button>
+    <button class="calc-key op" onclick="calcOp('*')">×</button>
+    <button class="calc-key fn" onclick="calcCopy()">COPY</button>
+
+    <!-- Row 5: 7 8 9 - -->
+    <button class="calc-key" onclick="calcDigit('7')">7</button>
+    <button class="calc-key" onclick="calcDigit('8')">8</button>
+    <button class="calc-key" onclick="calcDigit('9')">9</button>
+    <button class="calc-key op" onclick="calcOp('-')">−</button>
+    <button class="calc-key fn" onclick="calcNeg()">±</button>
+
+    <!-- Row 6: 4 5 6 + -->
+    <button class="calc-key" onclick="calcDigit('4')">4</button>
+    <button class="calc-key" onclick="calcDigit('5')">5</button>
+    <button class="calc-key" onclick="calcDigit('6')">6</button>
+    <button class="calc-key op" onclick="calcOp('+')">+</button>
+    <button class="calc-key fn" onclick="calcSwap()">SWAP</button>
+
+    <!-- Row 7: 1 2 3 = -->
+    <button class="calc-key" onclick="calcDigit('1')">1</button>
+    <button class="calc-key" onclick="calcDigit('2')">2</button>
+    <button class="calc-key" onclick="calcDigit('3')">3</button>
+    <button class="calc-key eq" onclick="calcEquals()" style="grid-row: span 2;">=</button>
+    <button class="calc-key fn" onclick="calcStoreM()">M</button>
+
+    <!-- Row 8: 0 . -->
+    <button class="calc-key wide" onclick="calcDigit('0')">0</button>
+    <button class="calc-key fn" onclick="calcRecallM()">MR</button>
+    <button class="calc-key fn" onclick="calcClearM()">MC</button>
+  </div>
+</div>
 
 <div class="pdf-panel" id="pdf-panel">
   <div class="pdf-panel-header">
@@ -2161,6 +2627,8 @@ void main(void) {
       type: 'mc',
       title: `In de file <code class="inline">lpuart0_interrupt.c</code>: op welke regel wordt een character toegevoegd aan de transmit FIFO?`,
       context: `Hint: dit gebeurt in <code class="inline">lpuart0_putchar()</code>, met de functie <code class="inline">f_push()</code>.`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 114,
       options: shuffle(['Regel 114', 'Regel 118', 'Regel 152', 'Regel 157']),
       correct: 'Regel 114',
       explanation: `Regel 114: <code class="inline">while(!f_push(&amp;tx, (uint8_t)data)) {}</code>. Dit probeert het character in de transmit FIFO te zetten en wacht (busy loop) als de FIFO vol is.`
@@ -2169,6 +2637,8 @@ void main(void) {
       topic: 'lpuart',
       type: 'mc',
       title: `In <code class="inline">lpuart0_interrupt.c</code>: op welke regel worden transmit interrupts <strong>enabled</strong>?`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 118,
       options: shuffle(['Regel 118', 'Regel 114', 'Regel 152', 'Regel 157']),
       correct: 'Regel 118',
       explanation: `Regel 118: <code class="inline">LPUART0->CTRL |= LPUART_CTRL_TIE(1);</code>. TIE = Transmit Interrupt Enable. Wordt aangezet ná het pushen, zodat de ISR de FIFO kan leegmaken.`
@@ -2177,6 +2647,8 @@ void main(void) {
       topic: 'lpuart',
       type: 'mc',
       title: `In de ISR van <code class="inline">lpuart0_interrupt.c</code>: op welke regel wordt het character uit de transmit FIFO naar het DATA register geschreven?`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 152,
       options: shuffle(['Regel 152', 'Regel 114', 'Regel 118', 'Regel 157']),
       correct: 'Regel 152',
       explanation: `Regel 152: <code class="inline">LPUART0->DATA = c;</code>. De ISR popt een character uit de FIFO (regel 150) en schrijft het in het hardware DATA register om te versturen.`
@@ -2185,6 +2657,8 @@ void main(void) {
       topic: 'lpuart',
       type: 'mc',
       title: `In de ISR van <code class="inline">lpuart0_interrupt.c</code>: op welke regel worden transmit interrupts <strong>disabled</strong> wanneer de FIFO leeg is?`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 157,
       options: shuffle(['Regel 157', 'Regel 114', 'Regel 118', 'Regel 152']),
       correct: 'Regel 157',
       explanation: `Regel 157: <code class="inline">LPUART0->CTRL &amp;= ~(LPUART_CTRL_TIE(1));</code>. Zonder dit zou de ISR voor altijd blijven afvuren omdat TDRE high blijft als er niets meer te zenden valt.`
@@ -2194,6 +2668,8 @@ void main(void) {
       topic: 'lpuart',
       type: 'open',
       title: `Wat gebeurt er in <code class="inline">lpuart0_interrupt.c</code> als een character naar de transmit FIFO geschreven wil worden, maar de FIFO is <strong>vol</strong>?`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 114,
       modelAnswer: `Op regel 114 zit een while-loop die wacht tot er ruimte vrijkomt: while(!f_push(...)) {}. f_push() returnt false zolang de FIFO vol is, dus de functie blijft daar 'hangen' (busy-wait) tot de ISR een character heeft verstuurd en plek vrijmaakt.`,
       explanation: `<strong>Busy-wait op regel 114.</strong> De aanroeper van <code class="inline">lpuart0_putchar()</code> blokkeert tot er ruimte is. De TX-ISR maakt ondertussen ruimte vrij door characters uit de FIFO te versturen via het DATA register.`
     }),
@@ -2202,6 +2678,8 @@ void main(void) {
       topic: 'lpuart',
       type: 'open',
       title: `Wat gebeurt er in de ISR als de <strong>receive FIFO vol</strong> is en er nog een character binnenkomt?`,
+      codeFile: 'lpuart0_interrupt.c',
+      codeLine: 168,
       modelAnswer: `Vanaf regel 168: als f_push(&rx, c) false returnt (FIFO vol), komt het programma in een oneindige while(1) {} loop terecht — de microcontroller bevriest. Een commentaar in de code zegt dat dit niet zou moeten gebeuren en dat je de FIFO-grootte aan je applicatie moet aanpassen.`,
       explanation: `<strong>Systeem freeze!</strong> Bij een vol RX-FIFO loopt de ISR vast in <code class="inline">while(1) {}</code>. Bedoeld als development-vangnet: laat zien dat je RX-buffer te klein is voor je workload.`
     }),
@@ -2710,6 +3188,524 @@ function saveStats() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   SOURCE CODE FILES — for code-viewer panel + code-link buttons on questions
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const CODE_FILES = {
+  'lpuart0_interrupt.c': `// File: lpuart0_interrupt.c
+
+
+#include "lpuart0_interrupt.h"
+#include "fifo.h"
+
+// -----------------------------------------------------------------------------
+// Local type definitions
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Local function prototypes
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Local variables
+// -----------------------------------------------------------------------------
+static fifo_t tx;
+static fifo_t rx;
+static uint8_t tx_buffer[128];
+static uint8_t rx_buffer[128];
+
+// -----------------------------------------------------------------------------
+// Local function implementation
+// -----------------------------------------------------------------------------
+void lpuart0_init(const uint32_t baudrate)
+{
+    // Initialize FIFOs
+    f_init(&tx, tx_buffer, sizeof(tx_buffer));
+    f_init(&rx, rx_buffer, sizeof(rx_buffer));
+
+    // Set clock source
+    // MUX: [010] = FRO_HF_DIV (defaults: FRO_HF = 48 MHz; DIV = 1)
+    MRCC0->MRCC_LPUART0_CLKSEL = MRCC_MRCC_LPUART0_CLKSEL_MUX(0b010);
+
+    // HALT: [0] = Divider clock is running
+    // RESET: [0] = Divider isn't reset
+    // DIV: [0000] = divider value = (DIV+1) = 1
+    MRCC0->MRCC_LPUART0_CLKDIV = 0;
+
+    // Enable modules and leave others unchanged
+    // LPUART0: [1] = Peripheral clock is enabled
+    // PORT0: [1] = Peripheral clock is enabled
+    MRCC0->MRCC_GLB_CC0_SET = MRCC_MRCC_GLB_CC0_LPUART0(1);
+    MRCC0->MRCC_GLB_CC0_SET = MRCC_MRCC_GLB_CC0_PORT0(1);
+
+    // Release modules from reset and leave others unchanged
+    // LPUART0: [1] = Peripheral is released from reset
+    // PORT0: [1] = Peripheral is released from reset
+    MRCC0->MRCC_GLB_RST0_SET = MRCC_MRCC_GLB_RST0_LPUART0(1);
+    MRCC0->MRCC_GLB_RST0_SET = MRCC_MRCC_GLB_RST0_PORT0(1);
+
+    // Configure P0_2
+    // LK : [1] = Locks this PCR
+    // INV: [0] = Does not invert
+    // IBE: [1] = Digital Input Buffer Enable, otherwise pin is used for analog
+    //            functions
+    // MUX: [0010] = Alternative 2 - LPUART0_RXD
+    // DSE: [0] = low drive strength is configured on the corresponding pin,
+    //            if the pin is configured as a digital output
+    // ODE: [0] = Disables
+    // SRE: [0] = Fast
+    // PE: [0] = Disables
+    // PS: [0] = n.a.
+    PORT0->PCR[2] = PORT_PCR_LK(1) | PORT_PCR_MUX(2) | PORT_PCR_IBE(1);
+
+    // Configure P0_3
+    // LK : [1] = Locks this PCR
+    // INV: [0] = Does not invert
+    // IBE: [0] = Input buffer disable
+    // MUX: [0010] = Alternative 2 - LPUART0_TXD
+    // DSE: [0] = low drive strength is configured on the corresponding pin,
+    //            if the pin is configured as a digital output
+    // ODE: [0] = Disables
+    // SRE: [0] = Fast
+    // PE: [0] = Disables
+    // PS: [0] = n.a.
+    PORT0->PCR[3] = PORT_PCR_LK(1) | PORT_PCR_MUX(2);
+
+    // Configure LPUART0. Although there are a lot of configuration options, the
+    // default configuration takes the following steps:
+    // 1. Configure baud rate
+    // 2. Enable receiver and/or transmitter
+
+    // 1.
+    //
+    // Configure baud rate
+    // OSR: [01111] = Results in an OSR of 16 (15+1)
+    // SBR: [.............] = baud rate = baud clock / ((OSR + 1) * SBR)
+    //                        => SBR = baud clock / (baud rate * (OSR+1))
+    LPUART0->BAUD = LPUART_BAUD_OSR(0b01111) |
+       LPUART_BAUD_SBR(CLK_FRO_48MHZ / (baudrate * 16));
+
+    // 2.
+    //
+    // TE: [1] = Transmitter Enable
+    // TIE: [0] = Transmitter Disable
+    // RE: [1] = Receiver Enable
+    // RIE: [1] = Receiver Enable
+    LPUART0->CTRL |= LPUART_CTRL_TE(1) | LPUART_CTRL_RIE(1) | LPUART_CTRL_RE(1);
+
+    // Enable LPUART0 interrupts
+    NVIC_SetPriority(LPUART0_IRQn, 3);
+    NVIC_ClearPendingIRQ(LPUART0_IRQn);
+    NVIC_EnableIRQ(LPUART0_IRQn);
+
+    // Globally enable interrupts
+    __enable_irq();
+}
+
+void lpuart0_putchar(const int data)
+{
+    // Wait for space to open up
+    while(!f_push(&tx, (uint8_t)data))
+    {}
+
+    // Enable TDRE interrupt
+    LPUART0->CTRL |= LPUART_CTRL_TIE(1);
+}
+
+int lpuart0_getchar(void)
+{
+    uint8_t c=0;
+
+    // Wait for data.
+    // If waiting is not desired, call the function lpuart0_rxcnt() first to
+    // make sure data is available.
+    while(!f_pop(&rx, &c))
+    {}
+
+    return (int)c;
+}
+
+uint32_t lpuart0_rxcnt(void)
+{
+    return f_cnt(&rx);
+}
+
+void LPUART0_IRQHandler(void)
+{
+    uint8_t c;
+
+    // Clear the interrupt
+    NVIC_ClearPendingIRQ(LPUART0_IRQn);
+
+    // Data transmitted?
+    if((LPUART0->STAT & LPUART_STAT_TDRE_MASK) != 0)
+    {
+        // Send another character?
+        if(f_pop(&tx, &c))
+        {
+            LPUART0->DATA = c;
+        }
+        else
+        {
+            // FIFO is empty so disable TDRE interrupt
+            LPUART0->CTRL &= ~(LPUART_CTRL_TIE(1));
+        }
+    }
+
+    // Data received?
+    if((LPUART0->STAT & LPUART_STAT_RDRF_MASK) != 0)
+    {
+        // Read data
+        c = (uint8_t)(LPUART0->DATA);
+
+        // Put in receive FIFO
+        if(!f_push(&rx, c))
+        {
+            // Error: receive FIFO full!!
+            // Should not happen, so freeze the system. Update FIFO size to
+            // match your application.
+            while (1)
+            {}
+        }
+    }
+}`
+};
+
+/* ──── C SYNTAX HIGHLIGHTER ──── */
+function highlightC(line) {
+  let s = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const placeholders = [];
+  function stash(html) {
+    placeholders.push(html);
+    return '\x00' + (placeholders.length - 1) + '\x00';
+  }
+  // Comments
+  s = s.replace(/(\/\/.*$)/g, m => stash('<span class="cmt">' + m + '</span>'));
+  // Strings
+  s = s.replace(/("(?:\\.|[^"\\])*")/g, m => stash('<span class="str">' + m + '</span>'));
+  // Preprocessor
+  s = s.replace(/^(\s*#\w+.*)$/g, m => stash('<span class="pp">' + m + '</span>'));
+  // Numbers
+  s = s.replace(/\b(0x[0-9a-fA-F]+|0b[01]+|\d+)([uU][lL]{0,2}|[lL]{1,2}[uU]?)?\b/g,
+    m => stash('<span class="num">' + m + '</span>'));
+  // Keywords
+  const keywords = ['if','else','while','for','do','return','break','continue','switch','case','default','void','const','static','struct','typedef','enum','union','sizeof','goto'];
+  s = s.replace(new RegExp('\\b(' + keywords.join('|') + ')\\b', 'g'),
+    '<span class="kw">$1</span>');
+  // Types
+  s = s.replace(/\b(uint8_t|uint16_t|uint32_t|uint64_t|int8_t|int16_t|int32_t|int64_t|int|char|float|double|long|short|signed|unsigned|fifo_t|size_t)\b/g,
+    '<span class="type">$1</span>');
+  // Registers
+  s = s.replace(/\b(PORT[0-9]+|GPIO[0-9]+|LPUART[0-9]+|LPI2C[0-9]+|LPTMR[0-9]+|CTIMER[0-9]+|MRCC0|NVIC|SysTick|CLK_FRO_48MHZ|LPUART0_IRQn)\b/g,
+    '<span class="reg">$1</span>');
+  s = s.replace(/\b(LPUART_CTRL_TIE|LPUART_CTRL_TE|LPUART_CTRL_RE|LPUART_CTRL_RIE|LPUART_STAT_TDRE_MASK|LPUART_STAT_RDRF_MASK|LPUART_BAUD_OSR|LPUART_BAUD_SBR|PORT_PCR_LK|PORT_PCR_INV|PORT_PCR_IBE|PORT_PCR_MUX|PORT_PCR_DSE|PORT_PCR_ODE|PORT_PCR_SRE|PORT_PCR_PE|PORT_PCR_PS|MRCC_MRCC_LPUART0_CLKSEL_MUX|MRCC_MRCC_GLB_CC0_LPUART0|MRCC_MRCC_GLB_CC0_PORT0|MRCC_MRCC_GLB_RST0_LPUART0|MRCC_MRCC_GLB_RST0_PORT0)\b/g,
+    '<span class="reg">$1</span>');
+  // Function calls
+  s = s.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=\()/g, (m, fn) => {
+    if (m.includes('span')) return m;
+    return '<span class="fn">' + fn + '</span>';
+  });
+  // Restore
+  s = s.replace(/\x00(\d+)\x00/g, (_, i) => placeholders[parseInt(i)]);
+  return s;
+}
+
+/* ──── CODE VIEWER PANEL ──── */
+let codeCurrentFile = null;
+
+function initCodeFileSelect() {
+  const sel = document.getElementById('code-file-select');
+  if (!sel) return;
+  sel.innerHTML = '';
+  Object.keys(CODE_FILES).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    sel.appendChild(opt);
+  });
+}
+
+function toggleCodePanel() {
+  const panel = document.getElementById('code-panel');
+  const isOpening = !panel.classList.contains('show');
+  panel.classList.toggle('show');
+  if (isOpening && !codeCurrentFile) {
+    const sel = document.getElementById('code-file-select');
+    if (!sel.options.length) initCodeFileSelect();
+    loadCodeFile(sel.value);
+  }
+}
+
+function loadCodeFile(filename, highlightLine = null) {
+  codeCurrentFile = filename;
+  const body = document.getElementById('code-body');
+  const content = CODE_FILES[filename];
+  if (!content) {
+    body.innerHTML = '<div style="padding: 20px; color: var(--red);">Bestand niet gevonden: ' + escapeHtml(filename) + '</div>';
+    return;
+  }
+  document.getElementById('code-file-select').value = filename;
+  const lines = content.split('\n');
+  const html = lines.map((line, i) => {
+    const lineNum = i + 1;
+    const cls = (highlightLine && lineNum === highlightLine) ? ' highlight' : '';
+    const highlighted = line.trim() === '' ? '&nbsp;' : highlightC(line);
+    return `<div class="code-line${cls}" id="cline-${lineNum}"><div class="code-ln">${lineNum}</div><div class="code-txt">${highlighted}</div></div>`;
+  }).join('');
+  body.innerHTML = html;
+  if (highlightLine) {
+    setTimeout(() => {
+      const el = document.getElementById('cline-' + highlightLine);
+      if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 80);
+  }
+}
+
+function jumpToCodeLine() {
+  const inp = document.getElementById('code-jump-line');
+  const ln = parseInt(inp.value);
+  if (isNaN(ln) || ln < 1) return;
+  document.querySelectorAll('.code-line.highlight').forEach(el => el.classList.remove('highlight'));
+  const el = document.getElementById('cline-' + ln);
+  if (el) {
+    el.classList.add('highlight');
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  } else {
+    alert(`Regel ${ln} bestaat niet in dit bestand.`);
+  }
+}
+
+function openCodeAtLine(filename, lineNum) {
+  document.getElementById('code-panel').classList.add('show');
+  if (!document.getElementById('code-file-select').options.length) initCodeFileSelect();
+  loadCodeFile(filename, lineNum || null);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   CALCULATOR — programmer mode with bit ops & multi-base display
+   ═══════════════════════════════════════════════════════════════════════ */
+
+const CALC_MASK = 0xFFFFFFFF;
+let calcMode = 'dec';
+let calcCurrent = '0';
+let calcPrev = null;
+let calcPendingOp = null;
+let calcJustEvaluated = false;
+let calcMemory = 0;
+
+function toggleCalcPanel() {
+  const panel = document.getElementById('calc-panel');
+  panel.classList.toggle('show');
+  if (panel.classList.contains('show')) updateCalcDisplay();
+}
+
+function setCalcMode(mode) {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  calcMode = mode;
+  calcCurrent = formatCalcValue(val, mode);
+  document.querySelectorAll('.calc-mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  document.querySelectorAll('.calc-key[data-hex]').forEach(b => {
+    b.disabled = (mode !== 'hex');
+  });
+  updateCalcDisplay();
+}
+
+function parseCalcInput(str, mode) {
+  if (!str || str === '-' || str === '') return 0;
+  const negative = str.startsWith('-');
+  const s = negative ? str.slice(1) : str;
+  let n;
+  if (mode === 'hex') n = parseInt(s, 16);
+  else if (mode === 'bin') n = parseInt(s, 2);
+  else n = parseInt(s, 10);
+  if (isNaN(n)) n = 0;
+  return negative ? -n : n;
+}
+
+function formatCalcValue(val, mode) {
+  if (mode === 'dec') return String(val);
+  const u = (val < 0) ? ((val >>> 0) & CALC_MASK) : (val & CALC_MASK);
+  if (mode === 'hex') return u.toString(16).toUpperCase();
+  if (mode === 'bin') return u.toString(2);
+  return String(val);
+}
+
+function calcDigit(d) {
+  if (calcJustEvaluated) {
+    calcCurrent = '0';
+    calcJustEvaluated = false;
+  }
+  if (calcMode === 'dec' && !/^[0-9]$/.test(d)) return;
+  if (calcMode === 'hex' && !/^[0-9A-F]$/.test(d)) return;
+  if (calcMode === 'bin' && !/^[01]$/.test(d)) return;
+  if (calcCurrent === '0' || calcCurrent === '-0') {
+    calcCurrent = calcCurrent === '-0' ? '-' + d : d;
+  } else {
+    const maxLen = calcMode === 'bin' ? 33 : calcMode === 'hex' ? 9 : 12;
+    if (calcCurrent.replace('-', '').length >= maxLen) return;
+    calcCurrent += d;
+  }
+  updateCalcDisplay();
+}
+
+function calcBackspace() {
+  if (calcJustEvaluated) { calcClear(); return; }
+  if (calcCurrent.length <= 1 || (calcCurrent.length === 2 && calcCurrent.startsWith('-'))) {
+    calcCurrent = '0';
+  } else {
+    calcCurrent = calcCurrent.slice(0, -1);
+  }
+  updateCalcDisplay();
+}
+
+function calcClear() {
+  calcCurrent = '0';
+  calcPrev = null;
+  calcPendingOp = null;
+  calcJustEvaluated = false;
+  document.getElementById('calc-pending').textContent = '';
+  updateCalcDisplay();
+}
+
+function opSymbol(op) {
+  return { '+':'+', '-':'−', '*':'×', '/':'÷', '&':'AND', '|':'OR', '^':'XOR',
+           '<<':'<<', '>>':'>>', '**':'^' }[op] || op;
+}
+
+function computeOp(a, b, op) {
+  let r;
+  switch (op) {
+    case '+': r = a + b; break;
+    case '-': r = a - b; break;
+    case '*': r = a * b; break;
+    case '/': r = (b === 0) ? 0 : Math.trunc(a / b); break;
+    case '&': r = (a & b); break;
+    case '|': r = (a | b); break;
+    case '^': r = (a ^ b); break;
+    case '<<': r = (a << (b & 31)); break;
+    case '>>': r = (a >> (b & 31)); break;
+    case '**': r = Math.pow(a, b); break;
+    default: r = b;
+  }
+  if (op === '&' || op === '|' || op === '^' || op === '<<' || op === '>>') {
+    r = r | 0;
+  }
+  return r;
+}
+
+function calcOp(op) {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  if (calcPrev !== null && calcPendingOp && !calcJustEvaluated) {
+    calcPrev = computeOp(calcPrev, val, calcPendingOp);
+  } else {
+    calcPrev = val;
+  }
+  calcPendingOp = op;
+  calcCurrent = formatCalcValue(calcPrev, calcMode);
+  document.getElementById('calc-pending').textContent = formatCalcValue(calcPrev, calcMode) + ' ' + opSymbol(op);
+  calcJustEvaluated = true;
+  updateCalcDisplay();
+}
+
+function calcEquals() {
+  if (calcPrev === null || !calcPendingOp) return;
+  const val = parseCalcInput(calcCurrent, calcMode);
+  const result = computeOp(calcPrev, val, calcPendingOp);
+  document.getElementById('calc-pending').textContent =
+    formatCalcValue(calcPrev, calcMode) + ' ' + opSymbol(calcPendingOp) + ' ' + formatCalcValue(val, calcMode) + ' =';
+  calcCurrent = formatCalcValue(result, calcMode);
+  calcPrev = null;
+  calcPendingOp = null;
+  calcJustEvaluated = true;
+  updateCalcDisplay();
+}
+
+function calcUnary(op) {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  let r = val;
+  if (op === '~') r = (~val) | 0;
+  calcCurrent = formatCalcValue(r, calcMode);
+  calcJustEvaluated = true;
+  updateCalcDisplay();
+}
+
+function calcNeg() {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  calcCurrent = formatCalcValue(-val, calcMode);
+  updateCalcDisplay();
+}
+
+function calcPow2() {
+  const n = parseCalcInput(calcCurrent, calcMode);
+  if (n < 0 || n > 31) {
+    document.getElementById('calc-pending').textContent = '2^n: n moet 0..31 zijn';
+    return;
+  }
+  const r = (1 << n) | 0;
+  document.getElementById('calc-pending').textContent = '2^' + n + ' =';
+  calcCurrent = formatCalcValue(r, calcMode);
+  calcJustEvaluated = true;
+  updateCalcDisplay();
+}
+
+function calcSwap() {
+  if (calcPrev !== null) {
+    const tmp = parseCalcInput(calcCurrent, calcMode);
+    calcCurrent = formatCalcValue(calcPrev, calcMode);
+    calcPrev = tmp;
+    updateCalcDisplay();
+  }
+}
+
+function calcCopy() {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  const text = `DEC: ${val}\nHEX: 0x${formatCalcValue(val, 'hex')}\nBIN: 0b${formatCalcValue(val, 'bin')}`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(
+      () => { document.getElementById('calc-pending').textContent = '✓ Gekopieerd'; },
+      () => { document.getElementById('calc-pending').textContent = '✗ Copy mislukt'; }
+    );
+  }
+}
+
+function calcParen() {
+  document.getElementById('calc-pending').textContent = 'Tip: gebruik = voor tussenresultaat';
+}
+
+function calcStoreM() {
+  calcMemory = parseCalcInput(calcCurrent, calcMode);
+  document.getElementById('calc-pending').textContent = 'M = ' + formatCalcValue(calcMemory, calcMode);
+}
+
+function calcRecallM() {
+  calcCurrent = formatCalcValue(calcMemory, calcMode);
+  calcJustEvaluated = true;
+  updateCalcDisplay();
+}
+
+function calcClearM() {
+  calcMemory = 0;
+  document.getElementById('calc-pending').textContent = 'M cleared';
+}
+
+function updateCalcDisplay() {
+  const val = parseCalcInput(calcCurrent, calcMode);
+  const display = calcCurrent === '' ? '0' : calcCurrent;
+  let prefixedMain = display;
+  if (calcMode === 'hex') prefixedMain = '0x' + display;
+  if (calcMode === 'bin') prefixedMain = '0b' + display;
+  document.getElementById('calc-main').textContent = prefixedMain;
+  document.getElementById('calc-dec').textContent = String(val);
+  document.getElementById('calc-hex').textContent = '0x' + formatCalcValue(val, 'hex');
+  let binStr = formatCalcValue(val, 'bin');
+  while (binStr.length % 4 !== 0 && binStr.length < 32) binStr = '0' + binStr;
+  const binGrouped = binStr.match(/.{1,4}/g).join(' ');
+  document.getElementById('calc-bin').textContent = '0b ' + binGrouped;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    AI CONFIG (API key + model) — stored in localStorage
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -3213,6 +4209,7 @@ function renderQuestion() {
         <div class="q-label">// ${topicName} — MULTIPLE CHOICE</div>
         <div class="q-title">${q.title}</div>
         ${q.context ? `<div class="q-context">${q.context}</div>` : ''}
+        ${q.codeFile ? `<button class="code-link-btn" onclick="openCodeAtLine('${q.codeFile}', ${q.codeLine || 'null'})">📜 Open ${q.codeFile}${q.codeLine ? ' op regel ' + q.codeLine : ''}</button>` : ''}
         ${q.code ? `<pre class="code">${hl(q.code)}</pre>` : ''}
         <div class="options" id="options">
           ${q.options.map((opt, i) => `
@@ -3237,6 +4234,7 @@ function renderQuestion() {
         <div class="q-label">// ${topicName} — BEREKENING</div>
         <div class="q-title">${q.title}</div>
         ${q.context ? `<div class="q-context">${q.context}</div>` : ''}
+        ${q.codeFile ? `<button class="code-link-btn" onclick="openCodeAtLine('${q.codeFile}', ${q.codeLine || 'null'})">📜 Open ${q.codeFile}${q.codeLine ? ' op regel ' + q.codeLine : ''}</button>` : ''}
         ${q.code ? `<pre class="code">${hl(q.code)}</pre>` : ''}
         <div class="num-input-row">
           <input type="text" class="num-input" id="num-answer" placeholder="getal..." autofocus />
@@ -3257,6 +4255,7 @@ function renderQuestion() {
         <div class="q-label">// ${topicName} — OPEN VRAAG</div>
         <div class="q-title">${q.title}</div>
         ${q.context ? `<div class="q-context">${q.context}</div>` : ''}
+        ${q.codeFile ? `<button class="code-link-btn" onclick="openCodeAtLine('${q.codeFile}', ${q.codeLine || 'null'})">📜 Open ${q.codeFile}${q.codeLine ? ' op regel ' + q.codeLine : ''}</button>` : ''}
         ${q.code ? `<pre class="code">${hl(q.code)}</pre>` : ''}
         <textarea class="text-input" id="open-answer" placeholder="Typ je antwoord hier..." autofocus></textarea>
         <div class="self-grade" id="self-grade">
@@ -3853,8 +4852,16 @@ async function renderPdfPage(pageNum) {
     await pdfRenderTask.promise;
     pdfRenderTask = null;
 
-    // Highlight search matches on this page
-    await drawMatchesForPage(page, viewport, wrap, pageNum);
+    // Paint search-match highlights directly onto the canvas
+    await paintMatchesOnCanvas(page, viewport, ctx, pageNum);
+
+    // Scroll to current match if it's on this page
+    if (pdfCurrentMatchIdx >= 0) {
+      const cur = pdfSearchMatches[pdfCurrentMatchIdx];
+      if (cur && cur.page === pageNum) {
+        scrollToMatchOnPage(cur, page, viewport);
+      }
+    }
   } catch (e) {
     if (e.name !== 'RenderingCancelledException') {
       console.warn('Page render error:', e);
@@ -3863,42 +4870,64 @@ async function renderPdfPage(pageNum) {
   }
 }
 
-async function drawMatchesForPage(page, viewport, wrap, pageNum) {
+async function paintMatchesOnCanvas(page, viewport, ctx, pageNum) {
   const pageMatches = pdfSearchMatches.filter(m => m.page === pageNum);
   if (!pageMatches.length) return;
 
   const textContent = await page.getTextContent();
-  const layer = document.createElement('div');
-  layer.className = 'pdf-match-layer';
-  layer.style.width = viewport.width + 'px';
-  layer.style.height = viewport.height + 'px';
 
-  pageMatches.forEach((m, localIdx) => {
+  // Save ctx state, draw all highlights, restore
+  ctx.save();
+
+  pageMatches.forEach((m) => {
     const item = textContent.items[m.itemIdx];
-    if (!item) return;
-    // Transform item position to viewport coordinates
+    if (!item || !item.str) return;
+
+    // Transform item baseline to viewport coordinates
     const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const itemWidth = item.width * viewport.scale;
-    const matchFrac = m.charStart / Math.max(1, item.str.length);
-    const matchWidthFrac = (m.charEnd - m.charStart) / Math.max(1, item.str.length);
+    const strLen = Math.max(1, item.str.length);
+    const matchFrac = m.charStart / strLen;
+    const matchWidthFrac = Math.max(1, m.charEnd - m.charStart) / strLen;
 
-    const left = tx[4] + itemWidth * matchFrac;
-    const top = tx[5] - fontHeight;
-    const width = Math.max(8, itemWidth * matchWidthFrac);
-    const height = fontHeight + 2;
+    const x = tx[4] + itemWidth * matchFrac;
+    const y = tx[5] - fontHeight;
+    const w = Math.max(10, itemWidth * matchWidthFrac);
+    const h = fontHeight * 1.2;
 
-    const mark = document.createElement('div');
-    mark.className = 'pdf-match';
-    if (pdfSearchMatches.indexOf(m) === pdfCurrentMatchIdx) mark.classList.add('current');
-    mark.style.left = left + 'px';
-    mark.style.top = top + 'px';
-    mark.style.width = width + 'px';
-    mark.style.height = height + 'px';
-    layer.appendChild(mark);
+    const isCurrent = pdfSearchMatches.indexOf(m) === pdfCurrentMatchIdx;
+
+    // Filled translucent highlight + outline
+    ctx.fillStyle = isCurrent ? 'rgba(255, 130, 30, 0.55)' : 'rgba(255, 220, 0, 0.5)';
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = isCurrent ? 'rgba(255, 90, 0, 0.95)' : 'rgba(255, 170, 0, 0.85)';
+    ctx.lineWidth = isCurrent ? 2 : 1.2;
+    ctx.strokeRect(x, y, w, h);
   });
 
-  wrap.appendChild(layer);
+  ctx.restore();
+
+  // Store last match positions on the canvas wrap for scrolling
+  document.getElementById('pdf-page-wrap').dataset.hasMatches = '1';
+}
+
+function scrollToMatchOnPage(match, page, viewport) {
+  // Find the match's screen position and scroll the viewer so it's visible
+  // We need to async fetch text content to find coords
+  page.getTextContent().then(tc => {
+    const item = tc.items[match.itemIdx];
+    if (!item) return;
+    const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
+    const fontHeight = Math.hypot(tx[2], tx[3]);
+    const y = tx[5] - fontHeight;
+    const viewer = document.getElementById('pdf-viewer');
+    const wrap = document.getElementById('pdf-page-wrap');
+    if (!viewer || !wrap) return;
+    // Scroll the viewer so the match is roughly 25% from top of viewport
+    const target = Math.max(0, y - viewer.clientHeight * 0.25);
+    viewer.scrollTop = target;
+  }).catch(() => {});
 }
 
 function changePdfPage(delta) {
@@ -4065,6 +5094,27 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (inPdfInput) return; // don't process other shortcuts while typing in PDF inputs
+  }
+
+  // Code panel
+  const codePanel = document.getElementById('code-panel');
+  if (codePanel && codePanel.classList.contains('show')) {
+    const ae = document.activeElement;
+    const inCodeInput = ae && (ae.id === 'code-jump-line' || ae.tagName === 'SELECT');
+    if (e.key === 'Escape' && !inCodeInput) {
+      toggleCodePanel();
+      return;
+    }
+    if (inCodeInput) return;
+  }
+
+  // Calculator panel
+  const calcPanel = document.getElementById('calc-panel');
+  if (calcPanel && calcPanel.classList.contains('show')) {
+    if (e.key === 'Escape') {
+      toggleCalcPanel();
+      return;
+    }
   }
 
   // If user is typing in any input/textarea, don't hijack keys
