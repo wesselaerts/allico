@@ -476,6 +476,16 @@
     font-size: 12.5px;
     border: 1px solid var(--border);
   }
+  /* Inside MC options, neutralize the green color so code-like answers
+     don't visually stand out from plain-text distractors (giving away
+     the answer). Keep monospace look + box for readability though. */
+  .option .opt-text code.inline {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .option.correct .opt-text code.inline { color: var(--green); }
+  .option.wrong .opt-text code.inline { color: var(--red); }
+  .option.selected:not(.correct):not(.wrong) .opt-text code.inline { color: var(--text); }
 
   /* ─── ANSWER AREAS ─────────────────────────────── */
   .options {
