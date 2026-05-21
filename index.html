@@ -2050,10 +2050,23 @@
         <strong>⚠ Let op:</strong> deel dit HTML-bestand niet met anderen nadat je je key hebt ingevuld. Iedereen met toegang tot je browser kan de key uitlezen via DevTools. Je kunt een API key aanmaken op <code class="inline">console.anthropic.com</code> — kosten zijn paar cent per beoordeling met Haiku.
       </div>
 
+      <div class="modal-heading" style="margin-top: 18px;">🔄 Kantoor TARS sync</div>
+      <div style="font-size: 12.5px; color: var(--text-dim); line-height: 1.6;">
+        Sync je quiz-sessies automatisch naar je Cloudflare Worker zodat Kantoor TARS ze ziet in je planning. Bij elke afgeronde sessie wordt de hele sessie-historie ge-POST naar <code class="inline">/allico-data/sync</code>. Fire-and-forget — faalt stil als je offline bent.
+      </div>
+
+      <label for="worker-sync-url-input">Worker sync URL</label>
+      <input type="url" id="worker-sync-url-input" placeholder="https://forge-c2-proxy6.naam.workers.dev" autocomplete="off" />
+
+      <div style="font-size: 11.5px; color: var(--text-dim); margin-top: 8px;">
+        Leeg laten = sync uit. Voor backfill van bestaande sessies: vul de URL in, klik Opslaan, open Settings opnieuw en klik <strong>Sync nu</strong>.
+      </div>
+
       <div class="modal-status" id="settings-status"></div>
 
       <div class="modal-actions">
         <button class="btn" onclick="clearApiKey()" style="border-color: var(--red); color: var(--red);">Key wissen</button>
+        <button class="btn" id="manual-sync-btn" onclick="manualSyncAllico()" style="border-color: #6ad6ff; color: #6ad6ff;">↻ Sync nu</button>
         <button class="btn" onclick="closeSettings()">Annuleer</button>
         <button class="btn btn-primary" onclick="saveSettings()">Opslaan</button>
       </div>
@@ -3174,6 +3187,7 @@ const defaultStats = {
   perTopic: {}, // topic -> {answered, correct, lastAnswered, streak}
   wrongPool: [], // ids of questions to revisit
   streak: 0,
+  sessionHistory: [], // per-session records {timestamp, date, mode, score, maxScore, grade, questionCount, correctCount}
 };
 
 let stats = loadStats();
@@ -3185,6 +3199,7 @@ function loadStats() {
     const s = { ...defaultStats, ...JSON.parse(raw) };
     if (!s.perTopic) s.perTopic = {};
     if (!s.recent) s.recent = [];
+    if (!Array.isArray(s.sessionHistory)) s.sessionHistory = [];
     return s;
   } catch (e) {
     console.warn('Stats load failed:', e);
@@ -3195,6 +3210,100 @@ function loadStats() {
 function saveStats() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(stats)); }
   catch (e) { console.warn('Stats save failed:', e); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ALLICO → KANTOOR TARS SYNC
+   Fire-and-forget POST naar Cloudflare Worker. URL in aiConfig.workerSyncUrl.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+function toISODate(s) {
+  if (!s || typeof s !== 'object') return null;
+  const ts = s.timestamp ?? s.time ?? s.endedAt ?? s.completedAt ?? s.date;
+  if (typeof ts === 'number') {
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+  }
+  if (typeof ts === 'string') {
+    // already YYYY-MM-DD or ISO timestamp
+    const slice = ts.slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(slice) ? slice : null;
+  }
+  return null;
+}
+
+function getWorkerSyncUrl() {
+  const u = (aiConfig.workerSyncUrl || '').trim();
+  if (!u) return '';
+  // strip trailing slash for clean concat
+  return u.replace(/\/+$/, '');
+}
+
+async function pushAllicoSessions() {
+  try {
+    const base = getWorkerSyncUrl();
+    if (!base) return; // no URL configured → silent no-op
+
+    const sessions = (stats.sessionHistory || [])
+      .map(s => ({ ...s, date: toISODate(s) }))
+      .filter(s => s.date);
+
+    await fetch(base + '/allico-data/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessions })
+    });
+    // response intentionally ignored — fire-and-forget
+  } catch (e) {
+    // silent — sync must never block the quiz flow
+    console.debug('Allico sync failed (silent):', e);
+  }
+}
+
+/* Manual sync — same as push but with user feedback in Settings modal */
+async function manualSyncAllico() {
+  const statusEl = document.getElementById('settings-status');
+  const btn = document.getElementById('manual-sync-btn');
+  const base = getWorkerSyncUrl();
+
+  if (!base) {
+    statusEl.className = 'modal-status err';
+    statusEl.textContent = '✗ Vul eerst een Worker sync URL in en klik Opslaan.';
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  statusEl.className = 'modal-status';
+  statusEl.textContent = '↻ Syncen naar Worker...';
+
+  try {
+    const sessions = (stats.sessionHistory || [])
+      .map(s => ({ ...s, date: toISODate(s) }))
+      .filter(s => s.date);
+
+    const res = await fetch(base + '/allico-data/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessions })
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => res.statusText);
+      throw new Error(`HTTP ${res.status}: ${txt.slice(0, 120)}`);
+    }
+
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
+    const count = (typeof data.count === 'number') ? data.count : sessions.length;
+
+    statusEl.className = 'modal-status ok';
+    statusEl.textContent = `✓ Sync gelukt — ${count} sessie${count === 1 ? '' : 's'} verstuurd.`;
+  } catch (err) {
+    statusEl.className = 'modal-status err';
+    statusEl.textContent = '✗ Sync mislukt: ' + (err.message || err);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -3725,13 +3834,14 @@ let aiConfig = loadAiConfig();
 function loadAiConfig() {
   try {
     const raw = localStorage.getItem(AI_STORAGE_KEY);
-    if (!raw) return { apiKey: '', model: 'claude-haiku-4-5-20251001' };
+    if (!raw) return { apiKey: '', model: 'claude-haiku-4-5-20251001', workerSyncUrl: '' };
     const c = JSON.parse(raw);
     return {
       apiKey: c.apiKey || '',
-      model: c.model || 'claude-haiku-4-5-20251001'
+      model: c.model || 'claude-haiku-4-5-20251001',
+      workerSyncUrl: c.workerSyncUrl || ''
     };
-  } catch (e) { return { apiKey: '', model: 'claude-haiku-4-5-20251001' }; }
+  } catch (e) { return { apiKey: '', model: 'claude-haiku-4-5-20251001', workerSyncUrl: '' }; }
 }
 
 function saveAiConfig() {
@@ -3748,6 +3858,8 @@ function hasApiKey() {
 function openSettings() {
   document.getElementById('api-key-input').value = aiConfig.apiKey || '';
   document.getElementById('model-select').value = aiConfig.model;
+  const wsu = document.getElementById('worker-sync-url-input');
+  if (wsu) wsu.value = aiConfig.workerSyncUrl || '';
   document.getElementById('settings-status').className = 'modal-status';
   document.getElementById('settings-status').textContent = '';
   document.getElementById('settings-modal').classList.add('show');
@@ -3760,6 +3872,7 @@ function closeSettings() {
 function saveSettings() {
   const key = document.getElementById('api-key-input').value.trim();
   const model = document.getElementById('model-select').value;
+  const workerSyncUrl = (document.getElementById('worker-sync-url-input')?.value || '').trim();
   const status = document.getElementById('settings-status');
 
   if (key && !key.startsWith('sk-ant-')) {
@@ -3768,16 +3881,24 @@ function saveSettings() {
     return;
   }
 
+  if (workerSyncUrl && !/^https?:\/\//i.test(workerSyncUrl)) {
+    status.className = 'modal-status err';
+    status.textContent = '✗ Worker sync URL moet beginnen met https:// (of http://).';
+    return;
+  }
+
   aiConfig.apiKey = key;
   aiConfig.model = model;
+  aiConfig.workerSyncUrl = workerSyncUrl;
   saveAiConfig();
 
   status.className = 'modal-status ok';
-  status.textContent = key
-    ? '✓ Opgeslagen. AI grading en "vraag aan Claude" zijn nu beschikbaar.'
-    : '✓ Opgeslagen. Geen key ingevuld — AI features staan uit.';
+  const parts = [];
+  parts.push(key ? 'AI features aan' : 'Geen key — AI features uit');
+  parts.push(workerSyncUrl ? 'sync naar Worker aan' : 'sync uit');
+  status.textContent = '✓ Opgeslagen — ' + parts.join(', ') + '.';
 
-  setTimeout(closeSettings, 1200);
+  setTimeout(closeSettings, 1400);
 }
 
 function clearApiKey() {
@@ -4493,6 +4614,23 @@ function finishQuiz() {
   totalPts = Math.round(totalPts * 10) / 10;
   earnedPts = Math.round(earnedPts * 10) / 10;
   const grade = totalPts > 0 ? Math.round((earnedPts / totalPts) * 100) / 10 : 0;
+
+  // ── Log this session for sync to Kantoor TARS ──
+  const _now = Date.now();
+  const _correctCount = session.questions.filter((q, i) => session.answers[i]?.correct).length;
+  if (!Array.isArray(stats.sessionHistory)) stats.sessionHistory = [];
+  stats.sessionHistory.push({
+    timestamp: _now,
+    date: new Date(_now).toISOString().slice(0, 10),
+    mode: lastMode,
+    score: earnedPts,
+    maxScore: totalPts,
+    grade: grade,
+    questionCount: session.questions.length,
+    correctCount: _correctCount
+  });
+  saveStats();
+  pushAllicoSessions(); // fire-and-forget, never blocks
 
   document.getElementById('quiz-view').classList.remove('active');
   document.getElementById('results-view').classList.add('active');
